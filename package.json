@@ -1,0 +1,9 @@
+{
+  "name": "erp",
+  "private": true,
+  "packageManager": "yarn@1.22.19",
+  "devDependencies": {
+    "@playwright/test": "^1.31.2",
+    "dotenv": "^16.0.3"
+  }
+}
