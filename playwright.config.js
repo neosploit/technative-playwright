@@ -1,11 +1,14 @@
 // @ts-check
-const { defineConfig, devices } = require('@playwright/test');
+const { defineConfig, devices } = require('@playwright/test')
+const CONSTANTS = require('./data/constants')
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
-require('dotenv').config();
+require('dotenv').config()
+
+const baseURL = CONSTANTS.ACCEPTANCE_URL
 
 /**
  * @see https://playwright.dev/docs/test-configuration
@@ -19,7 +22,7 @@ module.exports = defineConfig({
      * Maximum time expect() should wait for the condition to be met.
      * For example in `await expect(locator).toHaveText();`
      */
-    timeout: 5000
+    timeout: 5000,
   },
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -34,7 +37,8 @@ module.exports = defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'https://erp.technative.gr/',
+    baseURL,
+    ignoreHTTPSErrors: baseURL === CONSTANTS.ACCEPTANCE_URL,
     headless: false,
   },
 
@@ -84,5 +88,4 @@ module.exports = defineConfig({
   //   command: 'npm run start',
   //   port: 3000,
   // },
-});
-
+})
