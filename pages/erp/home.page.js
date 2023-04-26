@@ -1,4 +1,4 @@
-const TabBar = require('../page-objects/tabbar.page')
+const TabBar = require('../../page-objects/tabbar.page')
 
 module.exports = class HomePage {
   constructor(page) {

@@ -1,18 +1,20 @@
 const { test, expect } = require('@playwright/test')
 const { faker } = require('@faker-js/faker')
 const URLs = require('../data/URLs')
-const LoginPage = require('../pages/login.page')
-const TwoFactorAuthPage = require('../pages/two-factor-auth.page')
-const HomePage = require('../pages/home.page')
-const WorkDaysPage = require('../pages/workdays.page')
-const WorkLogPage = require('../pages/worklog.page')
+const LoginPage = require('../pages/erp/login.page')
+const TwoFactorAuthPage = require('../pages/erp/two-factor-auth.page')
+const HomePage = require('../pages/erp/home.page')
+const WorkDaysPage = require('../pages/erp/workdays.page')
+const WorkLogPage = require('../pages/erp/worklog.page')
+
+test.describe.configure({ mode: 'serial' })
 
 const flow = {
   emailAddress: process.env.CODESEED_EMAIL,
   password: process.env.CODESEED_PASSWORD,
   worklog: [
     {
-      date: '03-04-2023',
+      date: '24-04-2023',
       happinessScale: 4,
       hours: 8,
       work: faker.lorem.sentence(faker.datatype.number({ min: 3, max: 10 })),
@@ -20,9 +22,9 @@ const flow = {
       personalNotes: '',
     },
     {
-      date: '04-04-2023',
+      date: '25-04-2023',
       happinessScale: 4,
-      hours: 8,
+      hours: 6,
       work: [...Array(faker.datatype.number({ min: 1, max: 6 })).keys()]
         .map((_) => `MOBAPP-${faker.datatype.number({ min: 100, max: 999 })}`)
         .join(', '),
@@ -30,8 +32,8 @@ const flow = {
       personalNotes: '',
     },
     {
-      date: '05-04-2023',
-      happinessScale: 4,
+      date: '26-04-2023',
+      happinessScale: 3,
       hours: 8,
       work: [...Array(faker.datatype.number({ min: 1, max: 6 })).keys()]
         .map((_) => `MOBAPP-${faker.datatype.number({ min: 100, max: 999 })}`)
@@ -41,23 +43,23 @@ const flow = {
     },
   ],
   // worklog: {
-  //   '03-04-2023': {
-  //     happinessScale: 5,
+  //   '24-04-2023': {
+  //     happinessScale: 4,
   //     hours: 8,
   //     work: faker.lorem.sentence(faker.datatype.number({ min: 3, max: 10 })),
   //     onCall: false,
   //     personalNotes: '',
   //   },
-  //   '04-04-2023': {
+  //   '25-04-2023': {
   //     happinessScale: 4,
-  //     hours: 8,
+  //     hours: 6,
   //     work: [...Array(faker.datatype.number({ min: 1, max: 6 })).keys()]
   //       .map((_) => `MOBAPP-${faker.datatype.number({ min: 100, max: 999 })}`)
   //       .join(', '),
   //     onCall: false,
   //     personalNotes: '',
   //   },
-  //   '05-04-2023': {
+  //   '26-04-2023': {
   //     happinessScale: 3,
   //     hours: 8,
   //     work: [...Array(faker.datatype.number({ min: 1, max: 6 })).keys()]
@@ -74,13 +76,13 @@ let loginPage, twoFactorAuthPage, homePage, workDaysPage, workLogPage
 
 test.beforeAll(async ({ browser }, testInfo) => {
   context = await browser.newContext(
-    process.env.SESSION_ID
+    process.env.ERP_SESSION_ID
       ? {
           storageState: {
             cookies: [
               {
                 name: 'PHPSESSID',
-                value: process.env.SESSION_ID,
+                value: process.env.ERP_SESSION_ID,
                 domain: new URL(testInfo.project.use.baseURL).hostname,
                 path: '/',
               },
@@ -104,10 +106,8 @@ test.beforeAll(async ({ browser }, testInfo) => {
   workLogPage = new WorkLogPage(page)
 })
 
-test.describe.configure({ mode: 'serial' })
-
 test('login', async ({}, testInfo) => {
-  test.skip(!!process.env.SESSION_ID)
+  test.skip(!!process.env.ERP_SESSION_ID)
   testInfo.setTimeout(120000)
 
   await test.step('navigate to login page', async () => {
@@ -121,28 +121,25 @@ test('login', async ({}, testInfo) => {
     await loginPage.signIn.click()
   })
 
-  // await test.step('perform 2FA check', async () => {
-  //   test.skip(testInfo.project.use.baseURL === CONSTANTS.ACCEPTANCE_URL)
+  await test.step('2FA check', async () => {
+    if (!testInfo.project.use.baseURL.includes('.acc.')) {
+      await page.waitForURL(URLs.twoFactorAuth)
+      // User should manually perform the 2FA check
+      await page.waitForURL(URLs.myProfile, { timeout: 120000 })
+    } else {
+      await page.waitForURL(URLs.twoFactorAuth)
 
-  //   await page.waitForURL(URLs.twoFactorAuth)
-  //   // User should manually perform the 2FA check
-  //   await page.waitForURL(URLs.myProfile, { timeout: 120000 })
-  // })
+      const twoFactorAuthCode =
+        await twoFactorAuthPage.parseAuthenticationCode()
+      await twoFactorAuthPage.authenticationCodeInput.fill(twoFactorAuthCode)
+      await twoFactorAuthPage.login.click()
 
-  await test.step('grab the 2FA code manually', async () => {
-    // test.skip(testInfo.project.use.baseURL === CONSTANTS.PRODUCTION_URL)
-
-    await page.waitForURL(URLs.twoFactorAuth)
-
-    const twoFactorAuthCode = await twoFactorAuthPage.parseAuthenticationCode()
-    await twoFactorAuthPage.authenticationCodeInput.fill(twoFactorAuthCode)
-    await twoFactorAuthPage.login.click()
-
-    await page.waitForURL(URLs.myProfile)
+      await page.waitForURL(URLs.myProfile)
+    }
   })
 })
 
-test('worklog', async () => {
+test('worklog', async ({}, testInfo) => {
   await test.step('navigate to worklog page', async () => {
     await page.goto(URLs.myProfile)
     await homePage.goToWorkDaysPage()

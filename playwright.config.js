@@ -8,8 +8,6 @@ const CONSTANTS = require('./data/constants')
  */
 require('dotenv').config()
 
-const baseURL = CONSTANTS.ACCEPTANCE_URL
-
 /**
  * @see https://playwright.dev/docs/test-configuration
  */
@@ -36,48 +34,29 @@ module.exports = defineConfig({
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL,
-    ignoreHTTPSErrors: baseURL === CONSTANTS.ACCEPTANCE_URL,
     headless: false,
   },
 
   /* Configure projects for major browsers */
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'erp-worklog',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: CONSTANTS.ERP_URL,
+        ignoreHTTPSErrors: true,
+      },
+      testMatch: 'erp-worklog.test.js',
     },
-
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { channel: 'chrome' },
-    // },
+    {
+      name: 'mailslurp-pg',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: CONSTANTS.MAILSLURP_PG_URL,
+        testIdAttribute: 'data-test',
+      },
+      testMatch: 'mailslurp-pg.test.js',
+    },
   ],
 
   /* Folder for test artifacts such as screenshots, videos, traces, etc. */
